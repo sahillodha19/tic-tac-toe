@@ -1,107 +1,102 @@
-import React, { useRef, useState } from 'react'
-import './TicTacToe.css'
-import circle_icon from './../../assets/circle.png'
-import cross_icon from './../../assets/cross.png'
+import React, { useState, useRef } from 'react';
+import './TicTacToe.css';
+import circle_icon from './../../assets/circle.png';
+import cross_icon from './../../assets/cross.png';
 
-let data = ["", "", "", "", "", "", "", "", ""];
+const defaultBoard = ["", "", "", "", "", "", "", "", ""];
 
 const TicTacToe = () => {
+  const [page, setPage] = useState('menu');
+  const [board, setBoard] = useState([...defaultBoard]);
+  const [count, setCount] = useState(0);
+  const [lock, setLock] = useState(false);
+  const [isComputer, setIsComputer] = useState(false);
+  const titleRef = useRef(null);
 
-   let [count,setCount] = useState(0);
-   let [lock,setLock] = useState(false);
-   let titleRef = useRef(null);
+  const toggle = (index) => {
+    if (lock || board[index] !== "") return;
+    const newBoard = [...board];
+    newBoard[index] = count % 2 === 0 ? "X" : "O";
+    setBoard(newBoard);
+    setCount(count + 1);
+    checkWin(newBoard);
 
-   const toggle = (e, num) => {
-      if (lock){
-         return 0;
-      }
-      if (count % 2 === 0){
-         e.target.innerHTML = `<img src='${cross_icon}'>`;
-         data[num] = "X";
-         setCount(++count);
-      }else{
-         e.target.innerHTML = `<img src='${circle_icon}'>`;
-         data[num] = "O";
-         setCount(++count);
-      }
-      checkWin();
-   }
+    if (isComputer && count % 2 === 0 && count < 8) {
+      setTimeout(() => computerMove(newBoard), 500);
+    }
+  };
 
-   const checkWin = () => {
-      if (data[0] === data[1] && data[1] === data[2] && data[2] != ""){
-         won(data[0]);
+  const computerMove = (currentBoard) => {
+    const emptyIndexes = currentBoard.map((v, i) => v === "" ? i : null).filter(i => i !== null);
+    if (emptyIndexes.length === 0) return;
+    const randIndex = emptyIndexes[Math.floor(Math.random() * emptyIndexes.length)];
+    currentBoard[randIndex] = "O";
+    setBoard([...currentBoard]);
+    setCount(prev => prev + 1);
+    checkWin(currentBoard);
+  };
+
+  const checkWin = (b) => {
+    const wins = [
+      [0,1,2], [3,4,5], [6,7,8],
+      [0,3,6], [1,4,7], [2,5,8],
+      [0,4,8], [2,4,6]
+    ];
+    for (let combo of wins) {
+      const [a,b1,c] = combo;
+      if (b[a] && b[a] === b[b1] && b[a] === b[c]) {
+        won(b[a]);
+        return;
       }
-      else if(data[3] === data[4] && data[4] === data[5] && data[5] != ""){
-         won(data[3]);
-      }
-      else if(data[6] === data[7] && data[7] === data[8] && data[8] != ""){
-         won(data[6]);
-      }
-      else if(data[0] === data[4] && data[4] === data[8] && data[8] != ""){
-         won(data[0]);
-      }
-      else if(data[2] === data[4] && data[4] === data[6] && data[6] != ""){
-         won(data[2]);
-      }
-      else if(data[0] === data[3] && data[3] === data[6] && data[6] != ""){
-         won(data[0]);
-      }
-      else if(data[1] === data[4] && data[4] === data[7] && data[7] != ""){
-         won(data[1]);
-      }
-      else if(data[2] === data[5] && data[5] === data[8] && data[8] != ""){
-         won(data[2]);
-      }
-      else if (count === 9){
-         // alert("Game Over! It's a draw.");
-         titleRef.current.innerHTML= `It is a draw`;
-         setLock(true);
-         return 0;
-      }
-   }
-   const won = (winner) => {
+    }
+    if (count >= 8) {
+      titleRef.current.innerHTML = `It is a draw`;
       setLock(true);
-      if(winner==='X'){
-         titleRef.current.innerHTML= `Congratulations <img src=${cross_icon} />`;
-      }else{
-         titleRef.current.innerHTML= `Congratulations <img src=${circle_icon} />`;
-      }
-   }
+    }
+  };
 
-   const reset = () => {
-      data = ["", "", "", "", "", "", "", "", ""];
-      setCount(0);
-      setLock(false);
-      titleRef.current.innerHTML= `Tic Tac Toe Game In <span>React</span>`;
-      const boxes = document.querySelectorAll('.boxes');
-      boxes.forEach((box) => {
-         box.innerHTML = '';
-      });
-   }
+  const won = (winner) => {
+    setLock(true);
+    titleRef.current.innerHTML = `Congratulations <img src=${winner === 'X' ? cross_icon : circle_icon} />`;
+  };
+
+  const reset = () => {
+    setBoard([...defaultBoard]);
+    setCount(0);
+    setLock(false);
+    titleRef.current.innerHTML = `Tic Tac Toe Game In <span>React</span>`;
+  };
+
+  const startGame = (vsComputer = false) => {
+    setIsComputer(vsComputer);
+    setPage('game');
+    reset();
+  };
+
+  if (page === 'menu') {
+    return (
+      <div className="menu-container full-screen">
+        <h1 className="menu-title">Tic Tac Toe</h1>
+        <button className="menu-btn" onClick={() => startGame(false)}>Start Game (2 Players)</button>
+        <button className="menu-btn" onClick={() => startGame(true)}>Play Against Computer</button>
+        <button className="menu-btn" onClick={() => window.close()}>Exit</button>
+      </div>
+    );
+  }
 
   return (
-    <div className='container'>
+    <div className='container full-screen'>
       <h1 className='title' ref={titleRef}>Tic Tac Toe Game In <span>React</span></h1>
       <div className="board">
-         <div className="row1">
-            <div className="boxes" onClick={(e)=>{toggle(e,0)}}></div>
-            <div className="boxes" onClick={(e)=>{toggle(e,1)}}></div>
-            <div className="boxes" onClick={(e)=>{toggle(e,2)}}></div>
-         </div>
-         <div className="row2">
-            <div className="boxes" onClick={(e)=>{toggle(e,3)}}></div>
-            <div className="boxes" onClick={(e)=>{toggle(e,4)}}></div>
-            <div className="boxes" onClick={(e)=>{toggle(e,5)}}></div>
-         </div>
-         <div className="row3">
-            <div className="boxes" onClick={(e)=>{toggle(e,6)}}></div>
-            <div className="boxes" onClick={(e)=>{toggle(e,7)}}></div>
-            <div className="boxes" onClick={(e)=>{toggle(e,8)}}></div>
-         </div>
+        {board.map((val, idx) => (
+          <div key={idx} className="boxes" onClick={() => toggle(idx)}>
+            {val && <img src={val === 'X' ? cross_icon : circle_icon} alt={val} />}
+          </div>
+        ))}
       </div>
       <button className="reset" onClick={reset}>Reset</button>
     </div>
-  )
-}
+  );
+};
 
-export default TicTacToe
+export default TicTacToe;
